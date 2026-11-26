@@ -254,7 +254,7 @@ def test_ps_scripts_are_read_only():
 
 
 def test_ps_script_rejects_injection():
-    evil = "a@b.com'; Remove-Item C:\ -Recurse; '"
+    evil = "a@b.com'; Remove-Item C:/tmp -Recurse; '"
     script = psrunner.build_script("exchange", upn=evil)
     assert "Remove-Item" not in script and "-UserPrincipalName" not in script       # malformed hint is dropped
     assert "-UserPrincipalName 'a@contoso.com'" in psrunner.build_script("exchange", upn="a@contoso.com")
