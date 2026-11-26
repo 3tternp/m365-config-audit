@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+.venv-build/
+build/
+dist/
+/m365_audit.html
+/m365_audit.csv
+/m365_audit.json

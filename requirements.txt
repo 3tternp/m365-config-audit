@@ -1,0 +1,4 @@
+requests>=2.31
+msal>=1.28
+customtkinter>=5.2
+dnspython>=2.4
