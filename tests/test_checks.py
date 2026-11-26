@@ -264,7 +264,12 @@ def test_ps_script_rejects_injection():
             assert False, bad
         except ValueError:
             pass
-    out = psrunner.collect("spo", adminurl="https://evil.com", runner=lambda *a, **k: None)
+    real = psrunner.find_exe
+    psrunner.find_exe = lambda candidates: "powershell-stub"      # CI runners may have no PowerShell; the check must not depend on it
+    try:
+        out = psrunner.collect("spo", adminurl="https://evil.com", runner=lambda *a, **k: None)
+    finally:
+        psrunner.find_exe = real
     assert all(v["data"] is None and "invalid" in v["error"] for v in out.values())
 
 
