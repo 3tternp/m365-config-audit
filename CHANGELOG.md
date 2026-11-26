@@ -20,6 +20,10 @@ No version has been released yet; everything below is in the initial commit and 
 - **HTML, CSV and JSON reports** (tenant data is HTML-escaped).
 - Offline test suite (canned Graph and PowerShell data, Graph client paging/retry, report escaping, GUI logic) running in CI on Ubuntu and Windows with Python 3.10, 3.12 and 3.13.
 - README with logo, badges, permission tables, collapsible check reference, FAQ and roadmap; MIT license.
+- `SECURITY.md` with a reporting process, scope and safe-use guidance.
+
+### Security
+- Values interpolated into generated PowerShell scripts (sign-in name hint and SharePoint admin URL) are validated against strict patterns; a crafted value is dropped or rejected instead of being executed. Covered by a test.
 
 ### Known limitations
 - Not yet validated against a live Microsoft 365 tenant; tests use canned data only.

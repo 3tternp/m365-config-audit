@@ -253,6 +253,21 @@ def test_ps_scripts_are_read_only():
         assert psrunner.MARK in script and cfg["module"] in script
 
 
+def test_ps_script_rejects_injection():
+    evil = "a@b.com'; Remove-Item C:\ -Recurse; '"
+    script = psrunner.build_script("exchange", upn=evil)
+    assert "Remove-Item" not in script and "-UserPrincipalName" not in script       # malformed hint is dropped
+    assert "-UserPrincipalName 'a@contoso.com'" in psrunner.build_script("exchange", upn="a@contoso.com")
+    for bad in ("https://x.sharepoint.com'; calc; '", "https://evil.com", "", None):
+        try:
+            psrunner.build_script("spo", adminurl=bad)
+            assert False, bad
+        except ValueError:
+            pass
+    out = psrunner.collect("spo", adminurl="https://evil.com", runner=lambda *a, **k: None)
+    assert all(v["data"] is None and "invalid" in v["error"] for v in out.values())
+
+
 def test_ps_collect_with_fake_runner():
     payload = {"Tenant": {"data": [{"SharingCapability": "Disabled"}], "error": None}}
 

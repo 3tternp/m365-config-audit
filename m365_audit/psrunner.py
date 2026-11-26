@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -59,8 +60,17 @@ SERVICES = {
 }
 
 
+UPN_RE = re.compile(r"^[\w.%+\-]+@[\w.\-]+$")
+ADMIN_URL_RE = re.compile(r"^https://[a-z0-9\-]+-admin\.sharepoint\.com/?$")
+
+
 def build_script(service, upn=None, adminurl=None):
+    """Values interpolated into the script are validated first, so a crafted sign-in name or URL cannot inject PowerShell."""
     s = SERVICES[service]
+    if upn and not UPN_RE.match(upn):
+        upn = None                                        # only a convenience hint; drop it rather than risk injection
+    if service == "spo" and not (adminurl and ADMIN_URL_RE.match(adminurl)):
+        raise ValueError("invalid SharePoint admin URL")
     connect = s["connect"].format(upn=f" -UserPrincipalName '{upn}'" if upn else "",
                                   teamsupn=f" -AccountId '{upn}'" if upn else "", adminurl=adminurl or "")
     lines = ["$ErrorActionPreference='Stop'", "$ProgressPreference='SilentlyContinue'", "$out=@{}",
@@ -95,7 +105,10 @@ def collect(service, upn=None, adminurl=None, timeout=1200, log=lambda m: None, 
     exe = find_exe(s["exe"])
     if not exe:
         return {n: {"data": None, "error": f"PowerShell ({'/'.join(s['exe'])}) not found"} for n in names}
-    script = build_script(service, upn, adminurl)
+    try:
+        script = build_script(service, upn, adminurl)
+    except ValueError as e:
+        return {n: {"data": None, "error": str(e)} for n in names}
     enc = base64.b64encode(script.encode("utf-16-le")).decode()
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if sys.platform == "win32" else 0
     log(f"PowerShell: collecting {service} settings (sign in when the Microsoft prompt appears) ...")
